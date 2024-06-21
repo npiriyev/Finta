@@ -23,6 +23,18 @@ await DataContext.GetInstrumentsAndAddToTable();
 // start websocket, subscribe, and writes data to database
 WebSocketService.StartWebSocketService(app);
 
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path == "/")
+    {
+        await context.Response.WriteAsync("Service Works");
+    }
+    else
+    {
+        await next();
+    }
+});
+
 // Configure the HTTP request pipeline.
 // if (app.Environment.IsDevelopment())
 // {

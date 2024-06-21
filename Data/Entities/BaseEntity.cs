@@ -10,5 +10,6 @@ namespace WebApplication1.Data.Entities
         public InstrumentsEntity Instrument { get; set; }
         public string Provider { get; set; }
         public string Type { get; set; }
+        public DateTime RegDate { get; set; } = DateTime.Now;
     }
 }
