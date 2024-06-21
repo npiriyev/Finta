@@ -57,10 +57,10 @@ namespace WebApplication1.Services
 
         public static async Task<ProvidersResponse> GetProviders()
         {
-            var token = GetToken().Result.access_token;
+            var token = await GetToken();
             var url = BaseUrl + "api/instruments/v1/providers";
             var client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.access_token);
 
             // Send the POST request
 
@@ -189,8 +189,8 @@ namespace WebApplication1.Services
                             AddOrUpdateMapping(db, instrument, "activetick", inst.mappings.activetick.symbol, inst.mappings.activetick.exchange, inst.mappings.activetick.defaultOrderSize, instrumentMappings);
                         }
 
-                        db.InstrumentMappings.AddRange(instrumentMappings);
-                        db.SaveChanges();
+                        await db.InstrumentMappings.AddRangeAsync(instrumentMappings);
+                        await db.SaveChangesAsync();
                     }
                 }
             }

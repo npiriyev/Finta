@@ -43,9 +43,9 @@ namespace WebApplication1.Services
         {
             byte[] buffer = new byte[1024];
             var client = new ClientWebSocket();
-            var token = FintaChartsService.GetToken().Result.access_token;
+            var token = await FintaChartsService.GetToken();
 
-            Uri uri = new Uri($"wss://platform.fintacharts.com/api/streaming/ws/v1/realtime?token={token}");
+            Uri uri = new Uri($"wss://platform.fintacharts.com/api/streaming/ws/v1/realtime?token={token.access_token}");
 
             await client.ConnectAsync(uri, cancellationToken);
 
@@ -119,8 +119,8 @@ namespace WebApplication1.Services
 
                 using (var db = new DataContext())
                 {
-                    db.Lasts.Add(lastEntity);
-                    db.SaveChanges();
+                    await db.Lasts.AddAsync(lastEntity);
+                    await db.SaveChangesAsync();
                 }
             }
             else if (json["ask"] != null)
@@ -137,8 +137,8 @@ namespace WebApplication1.Services
 
                 using (var db = new DataContext())
                 {
-                    db.Asks.Add(askEntity);
-                    db.SaveChanges();
+                    await db.Asks.AddAsync(askEntity);
+                    await db.SaveChangesAsync();
                 }
             }
             else if (json["bid"] != null)
@@ -155,8 +155,8 @@ namespace WebApplication1.Services
 
                 using (var db = new DataContext())
                 {
-                    db.Bids.Add(bidEntity);
-                    db.SaveChanges();
+                    await db.Bids.AddAsync(bidEntity);
+                    await db.SaveChangesAsync();
                 }
             }
         }

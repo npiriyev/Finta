@@ -8,159 +8,232 @@ using Microsoft.EntityFrameworkCore;
 
 namespace WebApplication1.Controllers
 {
-    [ApiController]
+   [ApiController]
     [Route("[controller]")]
     public class FintaChartsController : ControllerBase
     {
-        public static WebSocketService _webSocketService = new WebSocketService();
-         
-
+        private static WebSocketService _webSocketService = new WebSocketService();
 
         [HttpGet("Auth")]
-        public string GetAuth()
+        public async Task<ActionResult<string>> GetAuth()
         {
-            var x = FintaChartsService.GetToken().Result;
-
-            return x.access_token;
+            try
+            {
+                var tokenResponse = await FintaChartsService.GetToken();
+                return tokenResponse?.access_token;
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
         }
 
         [HttpGet("Exchanges")]
-        public ExchangesResponse GetExchanges()
+        public async Task<ActionResult<ExchangesResponse>> GetExchanges()
         {
-            var x = FintaChartsService.GetExchanges().Result;
-
-            return x;
+            try
+            {
+                var exchangesResponse = await FintaChartsService.GetExchanges();
+                return exchangesResponse;
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
         }
 
         [HttpGet("Providers")]
-        public ProvidersResponse GetProviders()
+        public async Task<ActionResult<ProvidersResponse>> GetProviders()
         {
-            var x = FintaChartsService.GetProviders().Result;
-
-            return x;
+            try
+            {
+                var providersResponse = await FintaChartsService.GetProviders();
+                return providersResponse;
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
         }
 
         [HttpGet("AddOrUpdateInstruments")]
-        public InstrumentsResponse AddOrUpdateInstrumentsFromService(string provider = "oanda", string kind = "forex")
+        public async Task<ActionResult<InstrumentsResponse>> AddOrUpdateInstrumentsFromService(string provider = "oanda", string kind = "forex")
         {
-            var x = FintaChartsService.GetInsturments(provider, kind).Result;
-
-            return x;
+            try
+            {
+                var instrumentsResponse = await FintaChartsService.GetInsturments(provider, kind);
+                return instrumentsResponse;
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
         }
 
-        [HttpGet("GetInsturments")]
-        public async Task<IEnumerable> GetInstruments()
+        [HttpGet("GetInstruments")]
+        public async Task<ActionResult<IEnumerable<InstrumentsEntity>>> GetInstruments()
         {
-            var insList = new List<InstrumentsEntity>();
-
-            using(var db = new DataContext())
+            try
             {
-                insList = await db.Instruments.ToListAsync();
+                using (var db = new DataContext())
+                {
+                    var instrumentsList = await db.Instruments.ToListAsync();
+                    return instrumentsList;
+                }
             }
-
-            return insList;
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
         }
 
-        [HttpGet("GetInsturmentLastById")]
-        public LastEntity? GetInstrumentLastById(Guid id)
+        [HttpGet("GetInstrumentLastById")]
+        public async Task<ActionResult<LastEntity>> GetInstrumentLastById(Guid id)
         {
-            LastEntity ins = null;
-
-            using (var db = new DataContext())
+            try
             {
-                ins = db.Lasts
-                .Include(x => x.Instrument)
-                .FirstOrDefault(x => x.InstrumentId == id);
-            }
+                using (var db = new DataContext())
+                {
+                    var lastEntity = await db.Lasts
+                        .Include(x => x.Instrument)
+                        .FirstOrDefaultAsync(x => x.InstrumentId == id);
 
-            return ins;
+                    if (lastEntity == null)
+                        return NotFound();
+
+                    return lastEntity;
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
         }
 
-        [HttpGet("GetInsturmentLastBySymbol")]
-        public LastEntity? GetInstrumentLastBySymbol(string symbol)
+        [HttpGet("GetInstrumentLastBySymbol")]
+        public async Task<ActionResult<LastEntity>> GetInstrumentLastBySymbol(string symbol)
         {
-            LastEntity ins = null;
-
-            using (var db = new DataContext())
+            try
             {
-                ins = db.Lasts.Include(x => x.Instrument)
-                .FirstOrDefault(x => x.Instrument.Symbol == symbol);
-            }
+                using (var db = new DataContext())
+                {
+                    var lastEntity = await db.Lasts
+                        .Include(x => x.Instrument)
+                        .FirstOrDefaultAsync(x => x.Instrument.Symbol == symbol);
 
-            return ins;
+                    if (lastEntity == null)
+                        return NotFound();
+
+                    return lastEntity;
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
         }
 
-        [HttpGet("GetInsturmentAskById")]
-        public AskEntity? GetInstrumentAskById(Guid id)
+        [HttpGet("GetInstrumentAskById")]
+        public async Task<ActionResult<AskEntity>> GetInstrumentAskById(Guid id)
         {
-            AskEntity ins = null;
-
-            using (var db = new DataContext())
+            try
             {
-               
+                using (var db = new DataContext())
+                {
+                    var askEntity = await db.Asks
+                        .Include(x => x.Instrument)
+                        .FirstOrDefaultAsync(x => x.InstrumentId == id);
 
-                ins = db.Asks
-                .Include(x => x.Instrument)
-                .FirstOrDefault(x => x.InstrumentId == id);
+                    if (askEntity == null)
+                        return NotFound();
+
+                    return askEntity;
+                }
             }
-
-            return ins;
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
         }
 
-        [HttpGet("GetInsturmentAskBySymbol")]
-        public AskEntity? GetInstrumentAskBySymbol(string symbol)
+        [HttpGet("GetInstrumentAskBySymbol")]
+        public async Task<ActionResult<AskEntity>> GetInstrumentAskBySymbol(string symbol)
         {
-            AskEntity ins = null;
-
-            using (var db = new DataContext())
+            try
             {
-                ins = db.Asks.Include(x => x.Instrument)
-                .FirstOrDefault(x => x.Instrument.Symbol == symbol);
-            }
+                using (var db = new DataContext())
+                {
+                    var askEntity = await db.Asks
+                        .Include(x => x.Instrument)
+                        .FirstOrDefaultAsync(x => x.Instrument.Symbol == symbol);
 
-            return ins;
+                    if (askEntity == null)
+                        return NotFound();
+
+                    return askEntity;
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
         }
 
-        [HttpGet("GetInsturmentBidById")]
-        public BidEntity? GetInstrumentBidById(Guid id)
+        [HttpGet("GetInstrumentBidById")]
+        public async Task<ActionResult<BidEntity>> GetInstrumentBidById(Guid id)
         {
-            BidEntity ins = null;
-
-            using (var db = new DataContext())
+            try
             {
-                
+                using (var db = new DataContext())
+                {
+                    var bidEntity = await db.Bids
+                        .Include(x => x.Instrument)
+                        .FirstOrDefaultAsync(x => x.InstrumentId == id);
 
-                ins = db.Bids
-                .Include(x => x.Instrument)
-                .FirstOrDefault(x => x.InstrumentId == id);
+                    if (bidEntity == null)
+                        return NotFound();
+
+                    return bidEntity;
+                }
             }
-
-            return ins;
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
         }
 
-        [HttpGet("GetInsturmentBidBySymbol")]
-        public BidEntity? GetInstrumentBidBySymbol(string symbol)
+        [HttpGet("GetInstrumentBidBySymbol")]
+        public async Task<ActionResult<BidEntity>> GetInstrumentBidBySymbol(string symbol)
         {
-            BidEntity ins = null;
-
-            using (var db = new DataContext())
+            try
             {
-                ins = db.Bids.Include(x => x.Instrument)
-                .FirstOrDefault(x => x.Instrument.Symbol == symbol);
-            }
+                using (var db = new DataContext())
+                {
+                    var bidEntity = await db.Bids
+                        .Include(x => x.Instrument)
+                        .FirstOrDefaultAsync(x => x.Instrument.Symbol == symbol);
 
-            return ins;
+                    if (bidEntity == null)
+                        return NotFound();
+
+                    return bidEntity;
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
         }
 
         //[HttpGet("StartWebSocketService")]
-        //public async Task<string> StartService()
+        //public async Task<ActionResult<string>> StartService()
         //{
         //    _webSocketService.StartWebSocketClient();
         //    return "Service Started";
         //}
 
         //[HttpGet("StopWebSocketService")]
-        //public async Task<string> StopService()
+        //public async Task<ActionResult<string>> StopService()
         //{
         //    _webSocketService.StopWebSocketClient();
         //    return "Service Stopped";
