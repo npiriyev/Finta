@@ -12,56 +12,57 @@ namespace WebApplication1.Controllers
     [Route("[controller]")]
     public class FintaChartsController : ControllerBase
     {
-        private static WebSocketService _webSocketService = new WebSocketService();
+        // private static WebSocketService _webSocketService = new WebSocketService();
 
-        [HttpGet("Auth")]
-        public async Task<ActionResult<string>> GetAuth()
-        {
-            try
-            {
-                var tokenResponse = await FintaChartsService.GetToken();
-                return tokenResponse?.access_token;
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error: {ex.Message}");
-            }
-        }
+        // [HttpGet("Auth")]
+        // public async Task<ActionResult<string>> GetAuth()
+        // {
+        //     try
+        //     {
+        //         var tokenResponse = await FintaChartsService.GetToken();
+        //         return tokenResponse?.access_token;
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         return StatusCode(500, $"Error: {ex.Message}");
+        //     }
+        // }
 
-        [HttpGet("Exchanges")]
-        public async Task<ActionResult<ExchangesResponse>> GetExchanges()
-        {
-            try
-            {
-                var exchangesResponse = await FintaChartsService.GetExchanges();
-                return exchangesResponse;
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error: {ex.Message}");
-            }
-        }
+        // [HttpGet("Exchanges")]
+        // public async Task<ActionResult<ExchangesResponse>> GetExchanges()
+        // {
+        //     try
+        //     {
+        //         var exchangesResponse = await FintaChartsService.GetExchanges();
+        //         return exchangesResponse;
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         return StatusCode(500, $"Error: {ex.Message}");
+        //     }
+        // }
 
-        [HttpGet("Providers")]
-        public async Task<ActionResult<ProvidersResponse>> GetProviders()
-        {
-            try
-            {
-                var providersResponse = await FintaChartsService.GetProviders();
-                return providersResponse;
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error: {ex.Message}");
-            }
-        }
+        // [HttpGet("Providers")]
+        // public async Task<ActionResult<ProvidersResponse>> GetProviders()
+        // {
+        //     try
+        //     {
+        //         var providersResponse = await FintaChartsService.GetProviders();
+        //         return providersResponse;
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         return StatusCode(500, $"Error: {ex.Message}");
+        //     }
+        // }
 
         [HttpGet("AddOrUpdateInstruments")]
         public async Task<ActionResult<InstrumentsResponse>> AddOrUpdateInstrumentsFromService(string provider = "oanda", string kind = "forex")
         {
             try
             {
-                var instrumentsResponse = await FintaChartsService.GetInsturments(provider, kind);
+                var fintaService = new FintaChartsService();
+                var instrumentsResponse = await fintaService.GetInsturments(provider, kind);
                 return instrumentsResponse;
             }
             catch (Exception ex)
@@ -96,6 +97,7 @@ namespace WebApplication1.Controllers
                 {
                     var lastEntity = await db.Lasts
                         .Include(x => x.Instrument)
+                        .OrderByDescending(x=> x.Timestamp)
                         .FirstOrDefaultAsync(x => x.InstrumentId == id);
 
                     if (lastEntity == null)
@@ -119,6 +121,7 @@ namespace WebApplication1.Controllers
                 {
                     var lastEntity = await db.Lasts
                         .Include(x => x.Instrument)
+                        .OrderByDescending(x=> x.Timestamp)
                         .FirstOrDefaultAsync(x => x.Instrument.Symbol == symbol);
 
                     if (lastEntity == null)
@@ -142,6 +145,7 @@ namespace WebApplication1.Controllers
                 {
                     var askEntity = await db.Asks
                         .Include(x => x.Instrument)
+                        .OrderByDescending(x=> x.Timestamp)
                         .FirstOrDefaultAsync(x => x.InstrumentId == id);
 
                     if (askEntity == null)
@@ -165,6 +169,7 @@ namespace WebApplication1.Controllers
                 {
                     var askEntity = await db.Asks
                         .Include(x => x.Instrument)
+                        .OrderByDescending(x=> x.Timestamp)
                         .FirstOrDefaultAsync(x => x.Instrument.Symbol == symbol);
 
                     if (askEntity == null)
@@ -188,6 +193,7 @@ namespace WebApplication1.Controllers
                 {
                     var bidEntity = await db.Bids
                         .Include(x => x.Instrument)
+                        .OrderByDescending(x=> x.Timestamp)
                         .FirstOrDefaultAsync(x => x.InstrumentId == id);
 
                     if (bidEntity == null)
@@ -211,6 +217,7 @@ namespace WebApplication1.Controllers
                 {
                     var bidEntity = await db.Bids
                         .Include(x => x.Instrument)
+                        .OrderByDescending(x=> x.Timestamp)
                         .FirstOrDefaultAsync(x => x.Instrument.Symbol == symbol);
 
                     if (bidEntity == null)

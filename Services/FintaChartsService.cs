@@ -22,7 +22,7 @@ namespace WebApplication1.Services
         public static string Username = "r_test@fintatech.com";
         public static string Password = "kisfiz-vUnvy9-sopnyv";
 
-        public static async Task<AuthResponse?> GetToken()
+        public async Task<AuthResponse?> GetToken()
         {
             var url = BaseUrl + "identity/realms/fintatech/protocol/openid-connect/token";
             var client = new HttpClient();
@@ -55,7 +55,7 @@ namespace WebApplication1.Services
          
         }
 
-        public static async Task<ProvidersResponse> GetProviders()
+        public async Task<ProvidersResponse> GetProviders()
         {
             var token = await GetToken();
             var url = BaseUrl + "api/instruments/v1/providers";
@@ -76,13 +76,13 @@ namespace WebApplication1.Services
             return null;
         }
 
-        public static async Task<ExchangesResponse> GetExchanges()
+        public async Task<ExchangesResponse> GetExchanges()
         {
-            var token = GetToken().Result.access_token;
+            var token = await GetToken();
             var url = BaseUrl + "api/instruments/v1/exchanges";
             var client = new HttpClient();
 
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.access_token);
 
             // Send the POST request
 
@@ -99,13 +99,13 @@ namespace WebApplication1.Services
 
         }
 
-        public static async Task<InstrumentsResponse> GetInsturments(string provider, string kind)
+        public async Task<InstrumentsResponse> GetInsturments(string provider, string kind)
         {
-            var token = GetToken().Result.access_token;
+            var token = await GetToken();
             var url = BaseUrl + $"api/instruments/v1/instruments?provider={provider}&kind={kind}";
             var client = new HttpClient();
 
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.access_token);
 
             // Send the POST request
 
@@ -168,25 +168,21 @@ namespace WebApplication1.Services
 
                         var instrumentMappings = new List<InsturmentMappingEntity>();
 
-                        // Add or update mappings
-                        if (inst.mappings.dxfeed != null)
+                        var mappingTypes = new Dictionary<string, dynamic>
                         {
-                            AddOrUpdateMapping(db, instrument, "dxfeed", inst.mappings.dxfeed.symbol, inst.mappings.dxfeed.exchange, inst.mappings.dxfeed.defaultOrderSize, instrumentMappings);
-                        }
+                            { "dxfeed", inst.mappings.dxfeed },
+                            { "oanda", inst.mappings.oanda },
+                            { "simulation", inst.mappings.simulation },
+                            { "activetick", inst.mappings.activetick }
+                        };
 
-                        if (inst.mappings.oanda != null)
+                        foreach (var mappingType in mappingTypes)
                         {
-                            AddOrUpdateMapping(db, instrument, "oanda", inst.mappings.oanda.symbol, inst.mappings.oanda.exchange, inst.mappings.oanda.defaultOrderSize, instrumentMappings);
-                        }
-
-                        if (inst.mappings.simulation != null)
-                        {
-                            AddOrUpdateMapping(db, instrument, "simulation", inst.mappings.simulation.symbol, inst.mappings.simulation.exchange, inst.mappings.simulation.defaultOrderSize, instrumentMappings);
-                        }
-
-                        if (inst.mappings.activetick != null)
-                        {
-                            AddOrUpdateMapping(db, instrument, "activetick", inst.mappings.activetick.symbol, inst.mappings.activetick.exchange, inst.mappings.activetick.defaultOrderSize, instrumentMappings);
+                            var mapping = mappingType.Value;
+                            if (mapping != null)
+                            {
+                                AddOrUpdateMapping(db, instrument, mappingType.Key, mapping.symbol, mapping.exchange, mapping.defaultOrderSize, instrumentMappings);
+                            }
                         }
 
                         await db.InstrumentMappings.AddRangeAsync(instrumentMappings);

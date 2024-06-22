@@ -12,7 +12,7 @@ namespace WebApplication1.Services
         private CancellationTokenSource _cancellationTokenSource;
         private Task _webSocketTask;
 
-        public static void StartWebSocketService(WebApplication app)
+        public void StartWebSocketService(WebApplication app)
         {
             using (var scope = app.Services.CreateScope())
             {
@@ -43,7 +43,8 @@ namespace WebApplication1.Services
         {
             byte[] buffer = new byte[1024];
             var client = new ClientWebSocket();
-            var token = await FintaChartsService.GetToken();
+            var fintaService = new FintaChartsService();
+            var token = await fintaService.GetToken();
 
             Uri uri = new Uri($"wss://platform.fintacharts.com/api/streaming/ws/v1/realtime?token={token.access_token}");
 
@@ -105,59 +106,36 @@ namespace WebApplication1.Services
         {
             if (json["last"] != null)
             {
-                var lastEntity = new LastEntity
-                {
-                    Timestamp = json["last"]["timestamp"]?.ToObject<DateTime>() ?? DateTime.MinValue,
-                    Price = json["last"]["price"]?.ToObject<float>() ?? 0,
-                    Volume = json["last"]["volume"]?.ToObject<int>() ?? 0,
-                    Change = json["last"]["change"]?.ToObject<float>() ?? 0,
-                    ChangePct = json["last"]["changePct"]?.ToObject<float>() ?? 0,
-                    InstrumentId = json["instrumentId"]?.ToObject<Guid>() ?? Guid.Empty,
-                    Provider = json["provider"]?.ToObject<string>(),
-                    Type = json["type"]?.ToObject<string>()
-                };
-
-                using (var db = new DataContext())
-                {
-                    await db.Lasts.AddAsync(lastEntity);
-                    await db.SaveChangesAsync();
-                }
+                var lastEntity = CreateEntity<LastEntity>(json, "last");
+                await SaveEntityAsync(lastEntity);
             }
             else if (json["ask"] != null)
             {
-                var askEntity = new AskEntity
-                {
-                    Timestamp = json["ask"]["timestamp"]?.ToObject<DateTime>() ?? DateTime.MinValue,
-                    Price = json["ask"]["price"]?.ToObject<float>() ?? 0,
-                    Volume = json["ask"]["volume"]?.ToObject<int>() ?? 0,
-                    InstrumentId = json["instrumentId"]?.ToObject<Guid>() ?? Guid.Empty,
-                    Provider = json["provider"]?.ToObject<string>(),
-                    Type = json["type"]?.ToObject<string>()
-                };
-
-                using (var db = new DataContext())
-                {
-                    await db.Asks.AddAsync(askEntity);
-                    await db.SaveChangesAsync();
-                }
+                var askEntity = CreateEntity<AskEntity>(json, "ask");
+                await SaveEntityAsync(askEntity);
             }
             else if (json["bid"] != null)
             {
-                var bidEntity = new BidEntity
-                {
-                    Timestamp = json["bid"]["timestamp"]?.ToObject<DateTime>() ?? DateTime.MinValue,
-                    Price = json["bid"]["price"]?.ToObject<float>() ?? 0,
-                    Volume = json["bid"]["volume"]?.ToObject<int>() ?? 0,
-                    InstrumentId = json["instrumentId"]?.ToObject<Guid>() ?? Guid.Empty,
-                    Provider = json["provider"]?.ToObject<string>(),
-                    Type = json["type"]?.ToObject<string>()
-                };
+                var bidEntity = CreateEntity<BidEntity>(json, "bid");
+                await SaveEntityAsync(bidEntity);
+            }
+        }
 
-                using (var db = new DataContext())
-                {
-                    await db.Bids.AddAsync(bidEntity);
-                    await db.SaveChangesAsync();
-                }
+        private T CreateEntity<T>(JObject json, string entityKey) where T : BaseEntity, new()
+        {
+            var entity = json[entityKey].ToObject<T>();
+            entity.InstrumentId = json["instrumentId"]?.ToObject<Guid>() ?? Guid.Empty;
+            entity.Provider = json["provider"]?.ToObject<string>();
+            entity.Type = json["type"]?.ToObject<string>();
+            return entity;
+        }
+
+        private async Task SaveEntityAsync<T>(T entity) where T : class
+        {
+            using (var db = new DataContext())
+            {
+                await db.Set<T>().AddAsync(entity);
+                await db.SaveChangesAsync();
             }
         }
 

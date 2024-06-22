@@ -70,7 +70,8 @@ namespace WebApplication1.Data
         }
 
         public static async Task GetInstrumentsAndAddToTable(){
-            await FintaChartsService.GetInsturments("oanda", "forex");
+            var fintaService = new FintaChartsService();
+            await fintaService.GetInsturments("oanda", "forex");
         }
 
     }

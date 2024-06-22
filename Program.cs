@@ -21,13 +21,14 @@ DataContext.InitializeDatabase();
 await DataContext.GetInstrumentsAndAddToTable();
 
 // start websocket, subscribe, and writes data to database
-WebSocketService.StartWebSocketService(app);
+WebSocketService wService = new WebSocketService();
+wService.StartWebSocketService(app);
 
 app.Use(async (context, next) =>
 {
     if (context.Request.Path == "/")
     {
-        await context.Response.WriteAsync("Service Works");
+        await context.Response.WriteAsync("Service Running");
     }
     else
     {
@@ -36,11 +37,11 @@ app.Use(async (context, next) =>
 });
 
 // Configure the HTTP request pipeline.
-// if (app.Environment.IsDevelopment())
-// {
+if (app.Environment.IsDevelopment())
+{
     app.UseSwagger();
     app.UseSwaggerUI();
-// }
+}
 
 app.UseHttpsRedirection();
 
@@ -49,5 +50,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-
